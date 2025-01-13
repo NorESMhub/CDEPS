@@ -242,6 +242,7 @@ class StreamCDEPS(GenericXML):
                 elif node_name == "stream_datafiles":
                     # Get the resolved stream data files
                     stream_vars[node_name] = ""
+                    stream_datafiles_list = [] # to join stream_datafiles if multiple entries are present
                     stream_datafiles = ""
                     for child in self.get_children(root=node):
                         if (
@@ -306,6 +307,8 @@ class StreamCDEPS(GenericXML):
                                 stream_datafiles.split("\n"), "file"
                             )
                         # endif
+                        stream_datafiles_list.append(stream_datafiles)
+                    stream_datafiles = "\n".join(stream_datafiles_list)
                 elif node_name in xml_scalar_names:
                     attributes["model_grid"] = case.get_value("GRID")
                     attributes["compset"] = case.get_value("COMPSET")
@@ -657,7 +660,10 @@ class StreamCDEPS(GenericXML):
                                 adjusted_year, adjusted_month, adjusted_day
                             )
                             new_line = line.replace(match.group(0), date_string)
-                            new_lines.append(new_line)
+                            if os.path.exists(new_line):
+                                new_lines.append(new_line)
+                            else:
+                                print(f"   WARNING:not adding missing file {new_line}")
                 elif match.group("month"):
                     for month in range(1, 13):
                         date_string = (year_format + "-{:02d}").format(year, month)

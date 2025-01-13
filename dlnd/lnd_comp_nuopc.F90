@@ -35,6 +35,7 @@ module cdeps_dlnd_comp
   use dshr_dfield_mod   , only : dfield_type, dshr_dfield_add, dshr_dfield_copy
   use dshr_fldlist_mod  , only : fldlist_type, dshr_fldlist_add, dshr_fldlist_realize
   use glc_elevclass_mod , only : glc_elevclass_as_string, glc_elevclass_init
+  use nuopc_shr_methods , only : shr_get_rpointer_name
 
   implicit none
   private ! except
@@ -98,7 +99,6 @@ module cdeps_dlnd_comp
   integer                      :: glc_nec
   logical                      :: diagnose_data = .true.
   integer      , parameter     :: main_task=0                   ! task number of main task
-  character(*) , parameter     :: rpfile = 'rpointer.lnd'
 #ifdef CESMCOUPLED
   character(*) , parameter     :: modName =  "(lnd_comp_nuopc)"
 #else
@@ -245,7 +245,7 @@ contains
     endif
 
     ! Validate sdat datamode
-    if (trim(datamode) == 'copyall') then
+    if (trim(datamode) == 'glc_forcing_mct' .or. trim(datamode) == 'glc_forcing' ) then
        if (my_task == main_task) write(logunit,*) 'dlnd datamode = ',trim(datamode)
     else
        call shr_sys_abort(' ERROR illegal dlnd datamode = '//trim(datamode))
@@ -277,6 +277,7 @@ contains
     integer         :: current_mon  ! model month
     integer         :: current_day  ! model day
     integer         :: current_tod  ! model sec into model date
+    character(len=cl) :: rpfile     ! restart pointer file name
     character(len=*),parameter :: subname=trim(modName)//':(InitializeRealize) '
     !-------------------------------------------------------------------------------
 
@@ -301,17 +302,21 @@ contains
     call dlnd_comp_realize(importState, exportState, export_all, rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
-    ! Read restart if necessary
-    if (restart_read .and. .not. skip_restart_read) then
-       call dshr_restart_read(restfilm, rpfile, inst_suffix, nullstr, logunit, my_task, mpicom, sdat)
-    end if
-
     ! get the time to interpolate the stream data to
     call ESMF_ClockGet(clock, currTime=currTime, rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
     call ESMF_TimeGet(currTime, yy=current_year, mm=current_mon, dd=current_day, s=current_tod, rc=rc )
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
     call shr_cal_ymd2date(current_year, current_mon, current_day, current_ymd)
+
+    ! Read restart if necessary
+    if (restart_read .and. .not. skip_restart_read) then
+       call shr_get_rpointer_name(gcomp, 'lnd', current_ymd, current_tod, rpfile, 'read', rc)
+       if (ChkErr(rc,__LINE__,u_FILE_u)) return
+       call dshr_restart_read(restfilm, rpfile, logunit, my_task, mpicom, sdat, rc)
+       if (chkerr(rc,__LINE__,u_FILE_u)) return
+    end if
+
 
     ! Run dlnd to create export state
     call dlnd_comp_run(importState, exportState, current_ymd, current_tod, rc=rc)
@@ -333,7 +338,7 @@ contains
 
   !===============================================================================
   subroutine ModelAdvance(gcomp, rc)
-
+    use nuopc_shr_methods, only : shr_get_rpointer_name
     ! input/output variables
     type(ESMF_GridComp)  :: gcomp
     integer, intent(out) :: rc
@@ -349,6 +354,7 @@ contains
     integer                 :: mon           ! month
     integer                 :: day           ! day in month
     logical                 :: write_restart
+    character(len=CL)       :: rpfile
     character(len=*),parameter :: subname=trim(modName)//':(ModelAdvance) '
     !-------------------------------------------------------------------------------
 
@@ -379,8 +385,11 @@ contains
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
     if (write_restart) then
        call ESMF_TraceRegionEnter('dlnd_restart')
+       call shr_get_rpointer_name(gcomp, 'lnd', next_ymd, next_tod, rpfile, 'write', rc)
+       if (ChkErr(rc,__LINE__,u_FILE_u)) return
        call dshr_restart_write(rpfile, case_name, 'dlnd', inst_suffix, next_ymd, next_tod, &
-            logunit, my_task, sdat)
+            logunit, my_task, sdat, rc)
+       if (ChkErr(rc,__LINE__,u_FILE_u)) return
        call ESMF_TraceRegionExit('dlnd_restart')
     endif
 
@@ -457,14 +466,6 @@ contains
        fldList => fldList%next
     enddo
 
-    ! TODO: Non snow fields that nead to be added if dlnd is in cplhist mode
-    ! "Sl_t        " "Sl_tref     " "Sl_qref     " "Sl_avsdr    "
-    ! "Sl_anidr    " "Sl_avsdf    " "Sl_anidf    " "Sl_snowh    "
-    ! "Fall_taux   " "Fall_tauy   " "Fall_lat    " "Fall_sen    "
-    ! "Fall_lwup   " "Fall_evap   " "Fall_swnet  " "Sl_landfrac "
-    ! "Sl_fv       " "Sl_ram1     "
-    ! "Fall_flxdst1" "Fall_flxdst2" "Fall_flxdst3" "Fall_flxdst4"
-
   end subroutine dlnd_comp_advertise
 
   !===============================================================================
@@ -508,10 +509,13 @@ contains
     integer          , intent(out)   :: rc
 
     ! local variables
-    logical                    :: first_time = .true.
     integer                    :: n
     character(len=2)           :: nec_str
-    character(CS), allocatable :: strm_flds(:)
+    character(CS), allocatable :: strm_flds_topo(:)
+    character(CS), allocatable :: strm_flds_tsrf(:)
+    character(CS), allocatable :: strm_flds_qice(:)
+    real(r8), pointer          :: fldptr2(:,:)
+    logical                    :: first_time = .true.
     !-------------------------------------------------------------------------------
 
     rc = ESMF_SUCCESS
@@ -532,28 +536,35 @@ contains
        ! Create stream-> export state mapping
        ! Note that strm_flds is the model name for the stream field
        ! Note that state_fld is the model name for the export field
-       allocate(strm_flds(0:glc_nec))
-       do n = 0,glc_nec
-          nec_str = glc_elevclass_as_string(n)
-          strm_flds(n) = 'Sl_tsrf_elev' // trim(nec_str)
-       end do
-       call dshr_dfield_add(dfields, sdat, state_fld='Sl_tsrf_elev', strm_flds=strm_flds, state=exportState, &
+       if (trim(datamode) == 'glc_forcing_mct' .or. trim(datamode) == 'glc_forcing' ) then
+          allocate(strm_flds_tsrf(1:glc_nec+1))
+          allocate(strm_flds_topo(1:glc_nec+1))
+          allocate(strm_flds_qice(1:glc_nec+1))
+
+          do n = 1,glc_nec+1
+             if (trim(datamode) == 'glc_forcing_mct') then
+                write(nec_str, '(i2.2)') n
+             else if (trim(datamode) == 'glc_forcing') then
+                if (n < 10) then
+                   write(nec_str, '(i1.1)') n
+                else
+                   write(nec_str, '(i2.2)') n
+                end if
+             end if
+             strm_flds_tsrf(n) = 'Sl_tsrf_elev'   // trim(nec_str)
+             strm_flds_topo(n) = 'Sl_topo_elev'   // trim(nec_str)
+             strm_flds_qice(n) = 'Flgl_qice_elev' // trim(nec_str)
+          end do
+       end if
+
+       ! The following maps stream input fields to export fields that have an ungridded dimension
+       call dshr_dfield_add(dfields, sdat, state_fld='Sl_tsrf_elev', strm_flds=strm_flds_tsrf, state=exportState, &
             logunit=logunit, mainproc=mainproc, rc=rc)
        if (ChkErr(rc,__LINE__,u_FILE_u)) return
-
-       do n = 0,glc_nec
-          nec_str = glc_elevclass_as_string(n)
-          strm_flds(n) = 'Sl_topo_elev' // trim(nec_str)
-       end do
-       call dshr_dfield_add(dfields, sdat, state_fld='Sl_topo_elev', strm_flds=strm_flds, state=exportState, &
+       call dshr_dfield_add(dfields, sdat, state_fld='Sl_topo_elev', strm_flds=strm_flds_topo, state=exportState, &
             logunit=logunit, mainproc=mainproc, rc=rc)
        if (ChkErr(rc,__LINE__,u_FILE_u)) return
-
-       do n = 0,glc_nec
-          nec_str = glc_elevclass_as_string(n)
-          strm_flds(n) = 'Flgl_qice_elev' // trim(nec_str)
-       end do
-       call dshr_dfield_add(dfields, sdat, state_fld='Flgl_qice_elev', strm_flds=strm_flds, state=exportState, &
+       call dshr_dfield_add(dfields, sdat, state_fld='Flgl_qice_elev', strm_flds=strm_flds_qice, state=exportState, &
             logunit=logunit, mainproc=mainproc, rc=rc)
        if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
@@ -583,6 +594,27 @@ contains
     case('copyall')
        ! do nothing extra
     end select
+
+    ! Set special value over masked points
+    if (trim(datamode) == 'glc_forcing_mct' .or. trim(datamode) == 'glc_forcing' ) then
+       call dshr_state_getfldptr(exportState, 'Sl_tsrf_elev', fldptr2=fldptr2, rc=rc)
+       if (chkerr(rc,__LINE__,u_FILE_u)) return
+       do n = 1,size(fldptr2,dim=2)
+          if (lfrac(n) == 0.) fldptr2(:,n) = 1.e30_r8
+       end do
+
+       call dshr_state_getfldptr(exportState, 'Sl_topo_elev', fldptr2=fldptr2, rc=rc)
+       if (chkerr(rc,__LINE__,u_FILE_u)) return
+       do n = 1,size(fldptr2,dim=2)
+          if (lfrac(n) == 0.) fldptr2(:,n) = 1.e30_r8
+       end do
+
+       call dshr_state_getfldptr(exportState, 'Flgl_qice_elev', fldptr2=fldptr2, rc=rc)
+       if (chkerr(rc,__LINE__,u_FILE_u)) return
+       do n = 1,size(fldptr2,dim=2)
+          if (lfrac(n) == 0.) fldptr2(:,n) = 1.e30_r8
+       end do
+    end if
 
     call ESMF_TraceRegionExit('dlnd_datamode')
     call ESMF_TraceRegionExit('DLND_RUN')
