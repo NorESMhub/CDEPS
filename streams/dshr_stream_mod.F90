@@ -1649,42 +1649,78 @@ contains
   !===============================================================================
   subroutine parse_var_entry(entry, var)
 
-    ! Parse one <var> line into its two or three whitespace-separated tokens:
+    ! Parse one <var> line from a stream definition into its whitespace-separated
+    ! tokens.  Two forms are accepted:
     !
     !     <var>drynhx  Faxa_ndep_nhx_dry</var>
     !     <var>NDEP_NHx_month  Faxa_ndep_nhx  1.0e-3</var>
     !
-    ! The optional third token is a unit-conversion factor applied to this field
-    ! as it is read.  Absent leaves the default of 1.0.
+    ! The first two tokens are the variable's name in the data file and the name
+    ! the model knows it by.  The optional third token is a unit-conversion
+    ! factor, applied to that field as it is read (see dshr_strdata_mod).  When
+    ! it is absent the factor stays 1.0 and the data is used as it comes.
+    !
+    ! The factor belongs on the variable rather than the stream because units are
+    ! a property of the field: one stream may carry some fields needing
+    ! conversion and others not.  Nitrogen deposition is the motivating case --
+    ! the CMIP6 forcing datasets supply gN/m2/s while cplhist output supplies
+    ! kgN/m2/s, under identical model-side field names, so nothing but explicit
+    ! configuration can tell them apart.
+    !
+    ! Separators may be any run of spaces; the definition files conventionally
+    ! use two.  Anything after the third token is an error rather than being
+    ! ignored, so a typo is not silently swallowed.
 
     ! input/output parameters:
-    character(len=*)                ,intent(in)    :: entry
-    type(shr_stream_data_variable)  ,intent(inout) :: var
+    character(len=*)                ,intent(in)    :: entry   ! text of one <var> element
+    type(shr_stream_data_variable)  ,intent(inout) :: var     ! filled in from that text
 
-    integer           :: pos, next, ios
-    character(len=CX) :: rest, third
+    ! local variables
+    integer           :: pos     ! offset of the space ending the first token
+    integer           :: next    ! offset of the space ending the second token
+    integer           :: ios     ! iostat from reading the factor
+    character(len=CX) :: rest    ! the part of the entry not yet consumed
+    character(len=CX) :: third   ! the third token, before conversion to a number
     character(len=*),parameter :: subName = '(parse_var_entry) '
     !-------------------------------------------------------------------------------
 
+    ! Work through the entry left to right, consuming one token at a time.
+    ! adjustl moves leading blanks to the end so the next token always starts at
+    ! character 1, which keeps the offset arithmetic below simple.
     rest = adjustl(entry)
 
+    ! --- first token: the variable's name in the data file ---
+    ! trim() matters here: without it the trailing blanks that pad the fixed
+    ! length string would themselves be found as the first "space".
     pos = index(trim(rest), " ")
     if (pos == 0) then
        call shr_sys_abort(subName//" stream var entry needs at least two fields: "//trim(entry))
     end if
     var%nameinfile = rest(1:pos-1)
 
+    ! --- second token: the name the model uses ---
     rest = adjustl(rest(pos+1:))
     next = index(trim(rest), " ")
     if (next == 0) then
-       ! two tokens: no conversion
+       ! Nothing follows, so this is the common two-token form and the field is
+       ! used unconverted.  Setting the factor explicitly rather than relying on
+       ! the type's default keeps this correct if the variable is ever reused.
        var%nameinmodel  = trim(rest)
        var%scale_factor = 1.0_r8
        return
     end if
     var%nameinmodel = rest(1:next-1)
 
+    ! --- third token: the unit conversion factor ---
+    ! List-directed read so any Fortran real literal is accepted: 1.0e-3,
+    ! 0.001, 1.0d-3.  A non-numeric third token is a mistake in the stream
+    ! definition and stops the run rather than defaulting to 1.0, since a
+    ! silently unconverted field is exactly the failure this token exists to
+    ! prevent.
     third = adjustl(rest(next+1:))
+    if (index(trim(third), " ") /= 0) then
+       call shr_sys_abort(subName//" stream var entry has more than three fields: "//trim(entry))
+    end if
     read(third, *, iostat=ios) var%scale_factor
     if (ios /= 0) then
        call shr_sys_abort(subName//" could not read scale factor from stream var entry: "//trim(entry))
