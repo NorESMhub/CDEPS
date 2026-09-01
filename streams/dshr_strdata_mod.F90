@@ -586,6 +586,21 @@ contains
        end if
        call shr_stream_getFieldScaleFactors(sdat%stream(ns), sdat%pstrm(ns)%fldlist_scale)
 
+       ! Report any field that will be converted as it is read.  
+       ! Fields with no conversion are not listed, so anything appearing here is
+       ! deliberate configuration in the stream definition xml.
+       if (sdat%mainproc) then
+          do nfld = 1,nvars
+             if (sdat%pstrm(ns)%fldlist_scale(nfld) /= 1.0_r8) then
+                write(sdat%logunit,'(2a,i0,5a,es12.5)') subname, &
+                     ' Stream: ',ns, &
+                     ' field ',trim(sdat%pstrm(ns)%fldlist_stream(nfld)), &
+                     ' -> ',trim(sdat%pstrm(ns)%fldlist_model(nfld)), &
+                     ' will be scaled on read by ',sdat%pstrm(ns)%fldlist_scale(nfld)
+             end if
+          end do
+       end if
+
        ! Create field bundles on model mesh
        if (sdat%stream(ns)%readmode=='single') then
           sdat%pstrm(ns)%stream_lb = 1
