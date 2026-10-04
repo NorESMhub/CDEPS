@@ -166,7 +166,7 @@
     <valid_values></valid_values>
     <default_value>$DIN_LOC_ROOT/atm/cam/sst/sst_input4MIPs_SSTsAndSeaIce_CMIP_PCMDI-AMIP-1-1-10_gn_2000climo_c20260924.nc</default_value>
     <values match="last">
-      <value compset="(AMIP_|HIST[CE]?_|20TR_|5505_|PIPD_|%TSCH|_DOCN%IAF_)">$DIN_LOC_ROOT/atm/cam/sst/sst_input4MIPs_SSTsAndSeaIce_CMIP_PCMDI-AMIP-1-1-10_gn_187001-202212_c20260924.nc</value>
+      <value compset="(AMIP_|HIST_|20TR_|5505_|PIPD_|%TSCH|_DOCN%IAF_)">$DIN_LOC_ROOT/atm/cam/sst/sst_input4MIPs_SSTsAndSeaIce_CMIP_PCMDI-AMIP-1-1-10_gn_187001-202212_c20260924.nc</value>
       <value compset="1850_"                                                >$DIN_LOC_ROOT/atm/cam/sst/sst_input4MIPs_SSTsAndSeaIce_CMIP_PCMDI-AMIP-1-1-10_gn_piclimo_c20260924.nc</value>
       <value compset="2010_"                                                >$DIN_LOC_ROOT/atm/cam/sst/sst_input4MIPs_SSTsAndSeaIce_CMIP_PCMDI-AMIP-1-1-10_gn_2010climo_c20260924.nc</value>
     </values>
@@ -193,7 +193,7 @@
     <valid_values></valid_values>
     <default_value>1</default_value>
     <values match="last">
-      <value compset="(AMIP_|HIST[CE]?_|20TR_|5505_|PIPD_|%TSCH|_DOCN%IAF_)">1870</value>
+      <value compset="(AMIP_|HIST_|20TR_|5505_|PIPD_|%TSCH|_DOCN%IAF_)">1870</value>
     </values>
     <group>run_component_docn</group>
     <file>env_run.xml</file>
@@ -215,7 +215,7 @@
     <valid_values></valid_values>
     <default_value>0</default_value>
     <values match="last">
-      <value compset="(AMIP_|HIST[CE]?_|20TR_|5505_|PIPD_|%TSCH|_DOCN%IAF_)">1870</value>
+      <value compset="(AMIP_|HIST_|20TR_|5505_|PIPD_|%TSCH|_DOCN%IAF_)">1870</value>
     </values>
     <group>run_component_docn</group>
     <file>env_run.xml</file>
@@ -231,7 +231,7 @@
     <valid_values></valid_values>
     <default_value>0</default_value>
     <values match="last">
-      <value compset="(AMIP_|HIST[CE]?_|20TR_|5505_|PIPD_|%TSCH|_DOCN%IAF_)">2022</value>
+      <value compset="(AMIP_|HIST_|20TR_|5505_|PIPD_|%TSCH|_DOCN%IAF_)">2022</value>
     </values>
     <group>run_component_docn</group>
     <file>env_run.xml</file>
@@ -247,7 +247,7 @@
     <valid_values>cycle,extend,limit</valid_values>
     <default_value>cycle</default_value>
     <values match="last">
-      <value compset="(AMIP_|HIST[CE]?_|20TR_|5505_|PIPD_|%TSCH|_DOCN%IAF_)">extend</value>
+      <value compset="(AMIP_|HIST_|20TR_|5505_|PIPD_|%TSCH|_DOCN%IAF_)">extend</value>
     </values>
     <group>run_component_docn</group>
     <file>env_run.xml</file>
@@ -265,7 +265,7 @@
     <valid_values></valid_values>
     <default_value>1.5</default_value>
     <values match="last">
-      <value compset="(AMIP_|HIST[CE]?_|20TR_|5505_|PIPD_|%TSCH|_DOCN%IAF_)">1.e30</value>
+      <value compset="(AMIP_|HIST_|20TR_|5505_|PIPD_|%TSCH|_DOCN%IAF_)">1.e30</value>
     </values>
     <group>run_component_docn</group>
     <file>env_run.xml</file>
