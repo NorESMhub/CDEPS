@@ -110,7 +110,7 @@ DOCN%DOM
 
 DOCN%IAF
    - Interannual SST data provided by a file (same as DOCN%DOM, but the
-     SSTICE_* defaults select interannual data, as for AMIP/HIST compsets)
+     SSTICE_* defaults to select interannual data, as for AMIP/HIST compsets)
    - docn_mode: prescribed
    - streams: prescribed
    - datamode: sstdata
