@@ -189,10 +189,12 @@ SSTICE_TAXMODE
      Only used by DOCN running in prescribed mode.
 
 SSTICE_DTLIMIT
-   - Maximum allowed ratio of the model time step to the data time step for the
-     prescribed SST and ice coverage stream; exceeding it aborts the run.
+   - Maximum allowed ratio between the longest and shortest time interval
+     between consecutive data samples in the prescribed SST and ice coverage stream;
+     exceeding it aborts the run. This is used to detect gaps in the data.
      1.5 by default, 1.e30 for AMIP/HIST and DOCN%IAF compsets.
-     Must be 1.e30 when SSTICE_TAXMODE=extend (checked by buildnml).
+     Must be 1.e30 when SSTICE_TAXMODE=extend (checked by buildnml), because extend
+     uses a dummy year-0 or year-9999 bound outside the data range.
      Only used by DOCN running in prescribed mode.
 
 DOCN_AQPCONST_VALUE

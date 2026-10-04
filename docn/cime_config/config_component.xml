@@ -269,9 +269,11 @@
     </values>
     <group>run_component_docn</group>
     <file>env_run.xml</file>
-    <desc>Maximum allowed ratio of the model time step to the data time step for the
-    prescribed SST and ice coverage stream; exceeding it aborts the run.
-    Must be 1.e30 when SSTICE_TAXMODE=extend.
+    <desc>Maximum allowed ratio between the longest and shortest time interval
+    between consecutive data samples in the prescribed SST and ice coverage stream;
+    exceeding it aborts the run. This is used to detect gaps in the data.
+    Must be 1.e30 when SSTICE_TAXMODE=extend, because extend uses a dummy
+    year-0 or year-9999 bound outside the data range.
     This is only used when DOCN_MODE=prescribed.</desc>
   </entry>
 
