@@ -384,6 +384,8 @@ class StreamCDEPS(GenericXML):
                         ),
                     )
                 expect(
+                    # The requirement in this case is that dtlimit >= 1e10, but for simplicity
+                    # suggest a specific value in the error message (1e30)
                     dtlimit >= 1.e10,
                     "dtlimit must be set to 1.e30 when taxmode is extend for stream {}, found '{}'".format(
                         stream_name, stream_vars["stream_dtlimit"]
