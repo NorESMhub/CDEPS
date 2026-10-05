@@ -177,7 +177,7 @@ SSTICE_YR_ALIGN
      If SSTICE_YEAR_ALIGN is later than the model's starting year, or if the model is
      run after the prescribed data ends (as determined by SSTICE_YEAR_END), the
      behavior is set by SSTICE_TAXMODE.
-     (only used if both DOCN  and CICE are runing in prescribed mode)
+     (only used if both DOCN  and CICE are running in prescribed mode)
 
 SSTICE_TAXMODE
    - Time axis mode for the prescribed SST and ice coverage stream.
