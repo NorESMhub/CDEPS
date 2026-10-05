@@ -17,7 +17,7 @@
     <desc option="DOM">  prescribed ocean mode</desc>
     <desc option="SOM">  slab ocean mode</desc>
     <desc option="SOMAQP">  aquaplanet slab ocean mode</desc>
-    <desc option="IAF">  interannual mode</desc>
+    <desc option="IAF">  prescribed ocean mode with interannual SST and ice coverage data</desc>
     <desc option="SST_AQUAP">  aquaplanet mode:</desc>
     <desc option="AQP1">  analytic aquaplanet sst - option 1</desc>
     <desc option="AQP2">  analytic aquaplanet sst - option 2</desc>
@@ -48,11 +48,11 @@
 
   <entry id="DOCN_MODE">
     <type>char</type>
-    <valid_values>prescribed,sst_aquap1,sst_aquap2,sst_aquap3,sst_aquap4,sst_aquap5,sst_aquap6,sst_aquap7,sst_aquap8,sst_aquap9,sst_aquap10,sst_aquapfile,som,som_aquap,sst_aquap_constant,interannual,cplhist,multilev,multilev_dom,multilev_cplhist</valid_values>
+    <valid_values>prescribed,sst_aquap1,sst_aquap2,sst_aquap3,sst_aquap4,sst_aquap5,sst_aquap6,sst_aquap7,sst_aquap8,sst_aquap9,sst_aquap10,sst_aquapfile,som,som_aquap,sst_aquap_constant,cplhist,multilev,multilev_dom,multilev_cplhist</valid_values>
     <default_value>prescribed</default_value>
     <values match="last">
       <value compset="_DOCN%DOM_" >prescribed</value>
-      <value compset="_DOCN%IAF_" >interannual</value>
+      <value compset="_DOCN%IAF_" >prescribed</value>
       <value compset="_DOCN%SOM_" >som</value>
       <value compset="_DOCN%SOMAQP_">som_aquap</value>
       <value compset="_DOCN%AQP1_">sst_aquap1</value>
@@ -99,7 +99,7 @@
     ocean mixed layer depths and bottom-of-the-slab Q-fluxes.
     Scientifically appropriate bottom-of-the-slab Q-fluxes are normally
     ocean resolution dependent and are derived from the ocean model output
-    of a fully coupled CCSM run.  Note that while this mode runs out of
+    of a fully coupled run.  Note that while this mode runs out of
     the box, the default SOM forcing file is not scientifically
     appropriate and is provided for testing and development purposes only.
     Users must create scientifically appropriate data for their particular
@@ -140,42 +140,35 @@
     <desc>Sets SOM aquaplanet file</desc>
   </entry>
 
-  <entry id="SSTICE_STREAM">
+  <entry id="DOCN_AQPFILE_DATAFILE">
     <type>char</type>
     <valid_values></valid_values>
-    <default_value>CAMDATA</default_value>
+    <default_value>UNSET</default_value>
     <group>run_component_docn</group>
     <file>env_run.xml</file>
-    <desc>Prescribed SST and ice coverage stream name.
-    Sets SST and ice coverage stream name.
-    This is only used when DOCN_MODE=prescribed.</desc>
+    <desc>Aquaplanet SST data file. Must be set by the user when DOCN%AQPFILE is
+    present in the compset (no default file is provided). The file must contain
+    the variable SST_cpl in degrees Celsius.</desc>
+  </entry>
+
+  <entry id="DOCN_AQPFILE_MESHFILE">
+    <type>char</type>
+    <valid_values></valid_values>
+    <default_value>UNSET</default_value>
+    <group>run_component_docn</group>
+    <file>env_run.xml</file>
+    <desc>ESMF mesh file describing the grid of DOCN_AQPFILE_DATAFILE. Must be set
+    by the user when DOCN%AQPFILE is present in the compset.</desc>
   </entry>
 
   <entry id="SSTICE_DATA_FILENAME">
     <type>char</type>
     <valid_values></valid_values>
-    <default_value>$DIN_LOC_ROOT/atm/cam/sst/sst_HadOIBl_bc_1x1_2000climo_c180511.nc</default_value>
+    <default_value>$DIN_LOC_ROOT/atm/cam/sst/sst_input4MIPs_SSTsAndSeaIce_CMIP_PCMDI-AMIP-1-1-10_gn_2000climo_c20260924.nc</default_value>
     <values match="last">
-      <value compset="DOCN%DOM" grid="a%T31.*_oi%T31"						>$DIN_LOC_ROOT/atm/cam/sst/sst_HadOIBl_bc_48x96_clim_c050526.nc</value>
-      <value compset="DOCN%DOM" grid="a%1.9x2.5.*_oi%1.9x2.5"					>$DIN_LOC_ROOT/atm/cam/sst/sst_HadOIBl_bc_1.9x2.5_clim_c061031.nc</value>
-      <value compset="DOCN%DOM" grid="a%0.9x1.25.*_oi%0.9x1.25"					>$DIN_LOC_ROOT/atm/cam/sst/sst_HadOIBl_bc_0.9x1.25_clim_c040926.nc</value>
-      <value compset="DOCN%DOM" grid="a%0.47x0.63.*_oi%0.47x0.63"				>$DIN_LOC_ROOT/atm/cam/sst/sst_HadOIBl_bc_0.47x0.63_clim_c061106.nc</value>
-      <value compset="DOCN%DOM" grid="a%0.23x0.31.*_oi%0.23x0.31"				>$DIN_LOC_ROOT/atm/cam/sst/sst_HadOIBl_bc_0.23x0.31_clim_c110526.nc</value>
-      <value compset="(AMIP_|HIST[CE]?_|20TR_|5505_|PIPD_|%TSCH)" grid=".+"				>$DIN_LOC_ROOT/atm/cam/sst/sst_HadOIBl_bc_1x1_1850_2021_c120422.nc</value>
-      <value compset="(AMIP_|HIST[CE]?_|20TR_|5505_|PIPD_|%TSCH)" grid="a%T31.*_oi%T31"		>$DIN_LOC_ROOT/atm/cam/sst/sst_HadOIBl_bc_48x96_1850_2021_c120422.nc</value>
-      <value compset="(AMIP_|HIST[CE]?_|20TR_|5505_|PIPD_|%TSCH)" grid="a%1.9x2.5.*_oi%1.9x2.5"	>$DIN_LOC_ROOT/atm/cam/sst/sst_HadOIBl_bc_1.9x2.5_1850_2021_c120422.nc</value>
-      <value compset="(AMIP_|HIST[CE]?_|20TR_|5505_|PIPD_|%TSCH)" grid="a%0.9x1.25.*_oi%0.9x1.25"	>$DIN_LOC_ROOT/atm/cam/sst/sst_HadOIBl_bc_0.9x1.25_1850_2021_c120422.nc</value>
-      <value compset="(AMIP_|HIST[CE]?_|20TR_|5505_|PIPD_|%TSCH)" grid="a%0.47x0.63.*_oi%0.47x0.63"	>$DIN_LOC_ROOT/atm/cam/sst/sst_HadOIBl_bc_0.47x0.63_1850_2021_c120422.nc</value>
-      <value compset="(AMIP_|HIST[CE]?_|20TR_|5505_|PIPD_|%TSCH)" grid="a%0.23x0.31.*_oi%0.23x0.31"	>$DIN_LOC_ROOT/atm/cam/sst/sst_HadOIBl_bc_0.23x0.31_1850_2021_c120422.nc</value>
-      <value compset="1850[CE]?_"  grid=".+"								>$DIN_LOC_ROOT/atm/cam/sst/sst_HadOIBl_bc_1x1_clim_pi_c101029.nc</value>
-      <value compset="1850S_" grid=".+"								>$DIN_LOC_ROOT/ocn/docn7/SSTDATA/sst_ice_CMIP6_DECK_E3SM_1x1_1850_clim_c20190125.nc</value>
-      <value compset="1850[CE]?_"  grid="a%T31.*_oi%T31"						>$DIN_LOC_ROOT/atm/cam/sst/sst_HadOIBl_bc_48x96_clim_pi_c101028.nc</value>
-      <value compset="1850[CE]?_"  grid="a%1.9x2.5.*_oi%1.9x2.5"					>$DIN_LOC_ROOT/atm/cam/sst/sst_HadOIBl_bc_1.9x2.5_clim_pi_c101028.nc</value>
-      <value compset="1850[CE]?_"  grid="a%0.9x1.25.*_oi%0.9x1.25"					>$DIN_LOC_ROOT/atm/cam/sst/sst_HadOIBl_bc_0.9x1.25_clim_pi_c101028.nc</value>
-      <value compset="1850[CE]?_"  grid="a%0.47x0.63.*_oi%0.47x0.63"					>$DIN_LOC_ROOT/atm/cam/sst/sst_HadOIBl_bc_0.47x0.63_clim_pi_c101028.nc</value>
-      <value compset="1850[CE]?_"  grid="a%0.23x0.31.*_oi%0.23x0.31"					>$DIN_LOC_ROOT/atm/cam/sst/sst_HadOIBl_bc_0.23x0.31_clim_pi_c101028.nc</value>
-      <value compset="1950_"  grid=".+"								>$DIN_LOC_ROOT/ocn/docn7/SSTDATA/sst_ice_CMIP6_DECK_E3SM_1x1_1950_clim_c20180910.nc</value>
-      <value compset="2010S_" grid="a%ne30np4.*_oi%oEC60to30v3"					>$DIN_LOC_ROOT/ocn/docn7/SSTDATA/sst_ice_CMIP6_DECK_E3SM_1x1_2010_clim_c20190821.nc</value>
+      <value compset="(AMIP_|HIST_|20TR_|5505_|PIPD_|%TSCH|_DOCN%IAF_)">$DIN_LOC_ROOT/atm/cam/sst/sst_input4MIPs_SSTsAndSeaIce_CMIP_PCMDI-AMIP-1-1-10_gn_187001-202212_c20260924.nc</value>
+      <value compset="1850_"                                                >$DIN_LOC_ROOT/atm/cam/sst/sst_input4MIPs_SSTsAndSeaIce_CMIP_PCMDI-AMIP-1-1-10_gn_piclimo_c20260924.nc</value>
+      <value compset="2010_"                                                >$DIN_LOC_ROOT/atm/cam/sst/sst_input4MIPs_SSTsAndSeaIce_CMIP_PCMDI-AMIP-1-1-10_gn_2010climo_c20260924.nc</value>
     </values>
     <group>run_component_docn</group>
     <file>env_run.xml</file>
@@ -188,15 +181,7 @@
     <type>char</type>
     <valid_values></valid_values>
     <default_value>$DIN_LOC_ROOT/atm/cam/sst/sst_HadOIBl_bc_1x1_clim_c101029_ESMFmesh_120520.nc</default_value>
-    <values>
-      <value grid="_oi%T31">$DIN_LOC_ROOT/share/meshes/T31_040122_ESMFmesh.nc</value>
-      <value grid="_oi%1.9x2.5">$DIN_LOC_ROOT/share/meshes/fv1.9x2.5_141008_ESMFmesh.nc</value>
-      <value grid="_oi%0.9x1.25">$DIN_LOC_ROOT/share/meshes/fv0.9x1.25_141008_polemod_ESMFmesh.nc</value>
-      <value grid="_oi%0.47x0.63">$DIN_LOC_ROOT/share/meshes/fv0.47x0.63_141008_ESMFmesh.nc</value>
-      <value grid="_oi%0.23x0.31">UNSET</value><!-- fill this in -->
-      <value grid="_oi%4x5">$DIN_LOC_ROOT/share/meshes/fv4x5_050615_polemod_ESMFmesh.nc</value>
-    </values>
-    <group>run_component_cam_sstice</group>
+    <group>run_component_docn</group>
     <file>env_run.xml</file>
     <desc>Prescribed SST and ice coverage mesh file name.
     Sets SST and ice coverage grid file name for prescribed runs.
@@ -208,9 +193,9 @@
     <valid_values></valid_values>
     <default_value>1</default_value>
     <values match="last">
-      <value compset="(AMIP_|20TR_|HIST[CE]?_|5505_|PIPD_|%TSCH)">1850</value>
+      <value compset="(AMIP_|HIST_|20TR_|5505_|PIPD_|%TSCH|_DOCN%IAF_)">1870</value>
     </values>
-    <group>run_component_cam_sstice</group>
+    <group>run_component_docn</group>
     <file>env_run.xml</file>
     <desc>The model year that corresponds to SSTICE_YEAR_START on the data file.
     Prescribed SST and ice coverage data will be aligned so that the first year of
@@ -219,9 +204,9 @@
     should be set to the year given in RUN_STARTDATE.
     If SSTICE_YEAR_ALIGN is later than the model's starting year, or if the model is
     run after the prescribed data ends (as determined by SSTICE_YEAR_END), the
-    default behavior is to assume that the data from SSTICE_YEAR_START to
-    SSTICE_YEAR_END cyclically repeats. This behavior is controlled by the
-    &quot;taxmode&quot; stream option; see the data model documentation for more details.
+    behavior is set by SSTICE_TAXMODE: by default (cycle) the data from SSTICE_YEAR_START to
+    SSTICE_YEAR_END cyclically repeats, while for interannual compsets (extend)
+    the first/last data values are held; see the data model documentation for more details.
     This is only used when DOCN_MODE=prescribed.</desc>
   </entry>
 
@@ -230,9 +215,9 @@
     <valid_values></valid_values>
     <default_value>0</default_value>
     <values match="last">
-      <value compset="(AMIP_|HIST[CE]?_|20TR_|5505_|PIPD_|%TSCH)">1850</value>
+      <value compset="(AMIP_|HIST_|20TR_|5505_|PIPD_|%TSCH|_DOCN%IAF_)">1870</value>
     </values>
-    <group>run_component_cam_sstice</group>
+    <group>run_component_docn</group>
     <file>env_run.xml</file>
     <desc>The first year of data to use from SSTICE_DATA_FILENAME.
     This is the first year of prescribed SST and ice coverage data to use. For
@@ -246,14 +231,49 @@
     <valid_values></valid_values>
     <default_value>0</default_value>
     <values match="last">
-      <value compset="(AMIP_|HIST[CE]?_|20TR_|5505_|PIPD_|%TSCH)">2021</value>
+      <value compset="(AMIP_|HIST_|20TR_|5505_|PIPD_|%TSCH|_DOCN%IAF_)">2022</value>
     </values>
-    <group>run_component_cam_sstice</group>
+    <group>run_component_docn</group>
     <file>env_run.xml</file>
     <desc>The last year of data to use from SSTICE_DATA_FILENAME.
     This is the last year of prescribed SST and ice coverage data to use. For
     example, if a data file has data for years 0-99, and value is 49,
     years 50-99 in the file will not be used.
+    This is only used when DOCN_MODE=prescribed.</desc>
+  </entry>
+
+  <entry id="SSTICE_TAXMODE">
+    <type>char</type>
+    <valid_values>cycle,extend,limit</valid_values>
+    <default_value>cycle</default_value>
+    <values match="last">
+      <value compset="(AMIP_|HIST_|20TR_|5505_|PIPD_|%TSCH|_DOCN%IAF_)">extend</value>
+    </values>
+    <group>run_component_docn</group>
+    <file>env_run.xml</file>
+    <desc>Time axis mode for the prescribed SST and ice coverage stream.
+    cycle: data from SSTICE_YEAR_START to SSTICE_YEAR_END cyclically repeats
+    (appropriate for climatological data).
+    extend: the first/last data values are held outside the data time range
+    (appropriate for interannual data; requires SSTICE_DTLIMIT=1.e30).
+    limit: the model aborts if run outside the data time range.
+    This is only used when DOCN_MODE=prescribed.</desc>
+  </entry>
+
+  <entry id="SSTICE_DTLIMIT">
+    <type>real</type>
+    <valid_values></valid_values>
+    <default_value>1.5</default_value>
+    <values match="last">
+      <value compset="(AMIP_|HIST_|20TR_|5505_|PIPD_|%TSCH|_DOCN%IAF_)">1.e30</value>
+    </values>
+    <group>run_component_docn</group>
+    <file>env_run.xml</file>
+    <desc>Maximum allowed ratio between the longest and shortest time interval
+    between consecutive data samples in the prescribed SST and ice coverage stream;
+    exceeding it aborts the run. This is used to detect gaps in the data.
+    Must be 1.e30 when SSTICE_TAXMODE=extend, because extend uses a dummy
+    year-0 or year-9999 bound outside the data range.
     This is only used when DOCN_MODE=prescribed.</desc>
   </entry>
 
@@ -327,7 +347,7 @@
     <default_value>none</default_value>
     <group>run_component_docn</group>
     <file>env_run.xml</file>
-    <desc>none or colon deliminted string of import fields that DOCN will advertise</desc>
+    <desc>none or colon delimited string of import fields that DOCN will advertise</desc>
   </entry>
 
   <help>

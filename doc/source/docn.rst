@@ -109,10 +109,11 @@ DOCN%DOM
    - datamode: sstdata
 
 DOCN%IAF
-   - SST data provided by a file
-   - docn_mode: interannual
-   - streams: interannual
-   - datamode: iaf
+   - Interannual SST data provided by a file (same as DOCN%DOM, but the
+     SSTICE_* defaults to select interannual data, as for AMIP/HIST compsets)
+   - docn_mode: prescribed
+   - streams: prescribed
+   - datamode: sstdata
 
 DOCN%SOM
    - Slab Ocean Model is used to calculate sea surface temperature.
@@ -134,9 +135,9 @@ DOCN%AQP[1-10]
 
 DOCN%AQPFILE
    - SST data provided by a file
-   - docn_mode: sst_aquap_file
+   - docn_mode: sst_aquapfile
    - streams: aquapfile
-   - datamode: sst_aquapfile
+   - datamode: sst_aquap_file
 
 DOCN%AQPCONST
    - Constant sea surface data from aquaplanet
@@ -175,16 +176,41 @@ SSTICE_YR_ALIGN
      should be set to the year given in RUN_STARTDATE.
      If SSTICE_YEAR_ALIGN is later than the model's starting year, or if the model is
      run after the prescribed data ends (as determined by SSTICE_YEAR_END), the
-     default behavior is to assume that the data from SSTICE_YEAR_START to
-     SSTICE_YEAR_END cyclically repeats. This behavior is controlled by the
-     &quot;taxmode&quot; stream option; see the data model documentation for more details.
-     (only used by both DOCN runing in prescribed mode and CICE running in prescribed mode)
+     behavior is set by SSTICE_TAXMODE.
+     (only used if both DOCN  and CICE are running in prescribed mode)
+
+SSTICE_TAXMODE
+   - Time axis mode for the prescribed SST and ice coverage stream.
+     cycle (default): data from SSTICE_YEAR_START to SSTICE_YEAR_END cyclically repeats
+     (appropriate for climatological data).
+     extend (AMIP/HIST and DOCN%IAF compsets): the first/last data values are held
+     outside the data time range (appropriate for interannual data; requires SSTICE_DTLIMIT=1.e30).
+     limit: the model aborts if run outside the data time range.
+     Only used by DOCN running in prescribed mode.
+
+SSTICE_DTLIMIT
+   - Maximum allowed ratio between the longest and shortest time interval
+     between consecutive data samples in the prescribed SST and ice coverage stream;
+     exceeding it aborts the run. This is used to detect gaps in the data.
+     1.5 by default, 1.e30 for AMIP/HIST and DOCN%IAF compsets.
+     Must be 1.e30 when SSTICE_TAXMODE=extend (checked by buildnml), because extend
+     uses a dummy year-0 or year-9999 bound outside the data range.
+     Only used by DOCN running in prescribed mode.
 
 DOCN_AQPCONST_VALUE
    - Sets globally constant SST value and is only used when DOCN%AQPCONST is present in the compset.
 
 DOCN_SOMAQP_DATAFILE
-   - Sets the SOM aquaplanet file and is only used when DOCN%AQPFILE is present in the compset.
+   - Sets the SOM aquaplanet file and is only used when DOCN%SOMAQP is present in the compset.
+
+DOCN_AQPFILE_DATAFILE
+   - Sets the aquaplanet SST data file and is only used when DOCN%AQPFILE is present in the compset.
+     No default file is provided, so this must be set by the user (buildnml aborts if it is UNSET).
+     The file must contain the variable SST_cpl in degrees Celsius.
+
+DOCN_AQPFILE_MESHFILE
+   - Sets the ESMF mesh file for DOCN_AQPFILE_DATAFILE and is only used when DOCN%AQPFILE
+     is present in the compset. Must be set by the user (buildnml aborts if it is UNSET).
 
 DOCN_CPLHIST_YR_START
    - Starting year to loop data over
@@ -208,7 +234,7 @@ DOCN_CPLHIST_YR_ALIGN
      Only used if DOCN_MODE=cplhist.
 
 DOCN_IMPORT_FIELDS
-   - A column delimited set of import fields that are advertised by DOCN but never used.
+   - A colon delimited set of import fields that are advertised by DOCN but never used.
      In some cases it is needed for DOCN to advertise import fields even though it never will actually use them.
      This is needed in order for the mediator to add fields that would
      be sent to the ocean from the atmosphere, ice and runoff if the
