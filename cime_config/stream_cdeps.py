@@ -757,10 +757,7 @@ class StreamCDEPS(GenericXML):
                                 adjusted_year, adjusted_month, adjusted_day
                             )
                             new_line = line.replace(match.group(0), date_string)
-                            if os.path.exists(new_line):
-                                new_lines.append(new_line)
-                            else:
-                                print(f"   WARNING:not adding missing file {new_line}")
+                            new_lines.append(new_line)
                 elif match.group("month"):
                     for month in range(1, 13):
                         date_string = (year_format + "-{:02d}").format(year, month)
